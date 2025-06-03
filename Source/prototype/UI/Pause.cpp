@@ -1,0 +1,120 @@
+//--------------------------------------------------------------------
+// ファイル名 ：Pause.cpp
+// 概要       ：インゲーム内のポーズ画面
+// 作成者     ：0231本間
+// 更新内容   ：02/24　作成、
+//--------------------------------------------------------------------
+
+#include "Pause.h"
+#include "Kismet/GameplayStatics.h"
+
+void UPause::NativeConstruct()
+{
+	Super::NativeConstruct();
+
+	//ゲームを一時停止
+	UGameplayStatics::SetGamePaused(GetWorld(), true);
+
+	//入力受付をUIからのみにする
+	UGameplayStatics::GetPlayerController(GetWorld(), 0)->SetInputMode(FInputModeUIOnly());
+
+	//SEManagerを取得し、セレクト音を登録
+	_seManager = USEManager::GetInstance(GetWorld());
+	_seManager->RegisterSE("select", _selectSE);
+
+	//プレイヤーを参照し、代入
+	TSubclassOf<APlayerCharacter> findClass;
+	findClass = APlayerCharacter::StaticClass();
+	_player = UGameplayStatics::GetActorOfClass(GetWorld(), findClass);
+
+	//現在のプレイヤーの状態を取得
+	_beginPlayerStatus = Cast<APlayerCharacter>(_player)->GetPlayerStatus();
+
+	//プレイヤーの状態をUncontrollにする
+	Cast<APlayerCharacter>(_player)->SetPlayerStatus(PlayerStatus::Uncontroll);
+
+	init();
+}
+
+// 関数名：init
+// 引　数：なし
+// 戻り値：void
+// 処理内容：初期化処理
+void UPause::init()
+{
+	//再開ボタンにバインド
+	_backButton = Cast<UButton>(GetWidgetFromName("Back"));
+	if (_backButton) {
+		if (!_backButton->OnPressed.IsBound()) {
+			_backButton->OnPressed.AddDynamic(this, &UPause::BackPressed);
+		}
+	}
+
+	//リトライボタンにバインド
+	_retryButton = Cast<UButton>(GetWidgetFromName("Retry"));
+	if (_retryButton) {
+		if (!_retryButton->OnPressed.IsBound()) {
+			_retryButton->OnPressed.AddDynamic(this, &UPause::RetryPressed);
+		}
+	}
+
+	//ステージセレクトボタンにバインド
+	_quitButton = Cast<UButton>(GetWidgetFromName("Quit"));
+	if (_quitButton) {
+		if (!_quitButton->OnPressed.IsBound()) {
+			_quitButton->OnPressed.AddDynamic(this, &UPause::QuitPressed);
+		}
+	}
+}
+
+// 関数名：BackPressed
+// 引　数：なし
+// 戻り値：void
+// 処理内容：ポーズ画面を閉じて、インゲームに戻るボタン
+void UPause::BackPressed()
+{
+	//再開時のUIを生成
+	pm_ui_BackPause = CreateWidget<UUserWidget>(GetWorld(), m_ui_BackPause);
+	if (pm_ui_BackPause){
+		pm_ui_BackPause->AddToViewport();
+	}
+
+	//自身を削除
+	RemoveFromParent();
+
+	//セレクト音を鳴らす
+	_seManager->PlaySE2D("select");
+
+	//プレイヤーの状態を元に戻す
+	Cast<APlayerCharacter>(_player)->SetPlayerStatus(_beginPlayerStatus);
+}
+
+// 関数名：RetryPressed
+// 引　数：なし
+// 戻り値：void
+// 処理内容：同じステージをリトライするボタン
+void UPause::RetryPressed()
+{
+	//現在のステージ名を取得し、開きなおす
+	FString Lvname = UGameplayStatics::GetCurrentLevelName(GetWorld());
+	UGameplayStatics::OpenLevel(GetWorld(), FName(Lvname));
+}
+
+// 関数名：QuitPressed
+// 引　数：なし
+// 戻り値：void
+// 処理内容：ステージセレクトに戻るボタン
+void UPause::QuitPressed()
+{
+	//暗幕のUIを生成し、ステージセレクトへ遷移
+	pm_ui_QuitPause = CreateWidget<UBlackOut>(GetWorld(), m_ui_QuitPause);
+	if (pm_ui_QuitPause){
+		pm_ui_QuitPause->AddToViewport();
+		pm_ui_QuitPause->SetOpenLevelName("Master_StageSelect");
+	}
+
+	//セレクト音を鳴らす
+	_seManager->PlaySE2D("select");
+}
+
+

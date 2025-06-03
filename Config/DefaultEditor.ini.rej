@@ -1,0 +1,13 @@
+diff a/prototype/Config/DefaultEditor.ini b/prototype/Config/DefaultEditor.ini	(rejected hunks)
+@@ -1,11 +0,0 @@
+-[UnrealEd.SimpleMap]
+-SimpleMapName=/Game/TP_ThirdPerson/Maps/ThirdPersonExampleMap
+-
+-[EditoronlyBP]
+-bAllowClassAndBlueprintPinMatching=true
+-bReplaceBlueprintWithClass= true
+-bDontLoadBlueprintOutsideEditor= true
+-bBlueprintIsNotBlueprintType= true
+-
+-[/Script/AdvancedPreviewScene.SharedProfiles]
+-
